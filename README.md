@@ -1,59 +1,116 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Forge
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel application with Docker setup for easy development.
 
-## About Laravel
+## Prerequisites
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Docker & Docker Compose
+- Git
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Quick Start
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd Forge
+   ```
 
-## Learning Laravel
+2. **Set up environment**
+   ```bash
+   cp .env.example .env
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+3. **Start with Docker**
+   ```bash
+   docker-compose up -d
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+4. **Install dependencies and set up the application**
+   ```bash
+   docker exec forge-app composer setup
+   ```
 
-## Laravel Sponsors
+5. **Access the application**
+   - App: http://localhost:8000
+   - Database: localhost:5433 (PostgreSQL)
+   - Redis: localhost:6380
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Development
 
-### Premium Partners
+### Running the application
+```bash
+# Start all services
+docker-compose up -d
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# View logs
+docker-compose logs -f app
 
-## Contributing
+# Stop services
+docker-compose down
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Commands
 
-## Code of Conduct
+```bash
+# Install PHP dependencies
+docker exec forge-app composer install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Install Node dependencies
+docker exec forge-app npm install
 
-## Security Vulnerabilities
+# Run migrations
+docker exec forge-app php artisan migrate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Generate application key
+docker exec forge-app php artisan key:generate
 
-## License
+# Run tests
+docker exec forge-app composer test
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Development mode (with hot reload)
+docker exec forge-app composer dev
+```
+
+### Database
+
+- **Engine:** PostgreSQL 15
+- **Host:** localhost:5433
+- **Database:** forge
+- **Username:** forge
+- **Password:** secret
+
+## Services
+
+- **App:** Laravel 12 with PHP 8.2-FPM
+- **Web Server:** Nginx (port 8000)
+- **Database:** PostgreSQL 15 (port 5433)
+- **Cache:** Redis (port 6380)
+
+## Testing
+
+```bash
+# Run all tests
+docker exec forge-app composer test
+
+# Run specific test
+docker exec forge-app php artisan test tests/Feature/AuthTest.php
+```
+
+## Troubleshooting
+
+### Reset everything
+```bash
+docker-compose down -v
+docker-compose up -d
+docker exec forge-app composer setup
+```
+
+### View container logs
+```bash
+docker-compose logs [service-name]
+```
+
+### Access container shell
+```bash
+docker exec -it forge-app bash
+```

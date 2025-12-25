@@ -1,0 +1,65 @@
+services:
+  # Laravel App
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: forge-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - forge-network
+    depends_on:
+      - db
+      - redis
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: forge-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - forge-network
+    depends_on:
+      - app
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: forge-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: forge
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - forge-network
+
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: forge-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    networks:
+      - forge-network
+
+networks:
+  forge-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
