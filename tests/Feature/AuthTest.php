@@ -228,3 +228,10 @@ test('user is able to logout', function() {
 
     expect($user->tokens()->count())->toBe(0);
 });
+
+//! Tests for forgotten password
+test('user is able to reset their forgotten password', function() {
+    // User already exists
+    $user = User::factory()->create();
+    
+});

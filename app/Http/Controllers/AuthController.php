@@ -78,4 +78,14 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+    public function forgotPassword()
+    {
+        //* When the user clicks on the link and email is sent with the temporary password
+    }
+
+    public function resetPassword()
+    {
+        //* When the user enters the temp pass and re-enters the new one
+    }
 }
