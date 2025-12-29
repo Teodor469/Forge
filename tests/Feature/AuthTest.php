@@ -1,7 +1,11 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 
 uses(RefreshDatabase::class);
 
@@ -230,8 +234,164 @@ test('user is able to logout', function() {
 });
 
 //! Tests for forgotten password
-test('user is able to reset their forgotten password', function() {
+test('user is able to request a password reset if they have forgotten their password', function() {
     // User already exists
-    $user = User::factory()->create();
+    $user = User::factory()->create(['email' => 'teodor.todoro469@gmail.com']);
+
+    Notification::fake();
+
+    $response = $this->postJson('api/auth/forgot-password', [
+        'email' => 'teodor.todoro469@gmail.com',
+    ]);
+
+    $response->assertStatus(200)
+    ->assertJson([
+        'message' => 'Reset link sent to your email'
+    ]);
+
+    Notification::assertSentTo(
+        $user,
+        ResetPasswordNotification::class
+    );
+});
+
+test('user tried to provide a non-existent email for password reset', function() {
+    Notification::fake();
+
+    $response = $this->postJson('api/auth/forgot-password', [
+        'email' => 'nonexisten@mail.com',
+    ]);
+
+    $response->assertStatus(400)
+    ->assertJson([
+        'message' => "We can't find a user with that email address.",
+    ]);
+
+    Notification::assertNothingSent();
+});
+
+test('user did not provide an email for the password reset form', function() {
+    Notification::fake();
+
+    $response = $this->postJson('api/auth/forgot-password', [
+        'email' => '',
+    ]);
+
+    $response->assertStatus(422)
+    ->assertJsonValidationErrors(['email']);
+
+    Notification::assertNothingSent();
+});
+
+test('user is able to update their password after following the reset link from their email', function() {
+    $user = User::factory()->create([
+        'email' => 'teo@mail.com',
+        'password' => Hash::make('oldpassword')
+    ]);
+
+    $token = Password::createToken($user);
+
+    $response = $this->postJson('api/auth/reset-password', [
+        'token' => $token,
+        'email' => 'teo@mail.com',
+        'password' => '12345678',
+        'password_confirmation' => '12345678'
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJson(['message' => 'Successful password reset']);
     
+    $user->refresh();
+
+    expect(Hash::check('12345678', $user->password))->toBeTrue();
+    expect(Hash::check('oldpassword', $user->password))->toBeFalse();
+});
+
+test('user does not have a token for resetting their password', function() {
+    $user = User::factory()->create([
+        'email' => 'teo@mail.com',
+        'password' => Hash::make('oldpassword'),
+    ]);
+
+    $response = $this->postJson('api/auth/reset-password', [
+        'token' => '',
+        'email' => 'teo@mail.com',
+        'password' => '12345678',
+        'password_confirmation' => '12345678',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['token']);
+
+    expect(Hash::check('12345678', $user->password))->toBeFalse();
+    expect(Hash::check('oldpassword', $user->password))->toBeTrue();
+});
+
+test('user does not provide a valid email address', function() {
+    $user = User::factory()->create([
+        'email' => 'teo@mail.com',
+        'password' => 'oldpassword',
+    ]);
+
+    $token = Password::createToken($user);
+
+    $response = $this->postJson('api/auth/reset-password', [
+        'token' => $token,
+        'email' => 'teo1@mail.com',
+        'password' => '12345678',
+        'password_confirmation' => '12345678'
+    ]);
+
+    $response->assertStatus(400)
+        ->assertJson([
+            'message' => "We can't find a user with that email address."
+        ]);
+
+    expect(Hash::check('12345678', $user->password))->toBeFalse();
+    expect(Hash::check('oldpassword', $user->password))->toBeTrue();
+});
+
+test('user password does not match', function() {
+    $user = User::factory()->create([
+        'email' => 'teo@mail.com',
+        'password' => 'oldpassword',
+    ]);
+
+    $token = Password::createToken($user);
+
+    $response = $this->postJson('api/auth/reset-password', [
+        'token' => $token,
+        'email' => 'teo1@mail.com',
+        'password' => '12345678',
+        'password_confirmation' => '12345679'
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['password']);
+
+    expect(Hash::check('12345678', $user->password))->toBeFalse();
+    expect(Hash::check('12345679', $user->password))->toBeFalse();
+    expect(Hash::check('oldpassword', $user->password))->toBeTrue();
+});
+
+test('New password is too short', function() {
+    $user = User::factory()->create([
+        'email' => 'teo@mail.com',
+        'password' => 'oldpassword',
+    ]);
+
+    $token = Password::createToken($user);
+
+    $response = $this->postJson('api/auth/reset-password', [
+        'token' => $token,
+        'email' => 'teo@mail.com',
+        'password' => '1234567',
+        'password_confirmation' => '1234567'
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['password']);
+
+    expect(Hash::check('1234567', $user->password))->toBeFalse();
+    expect(Hash::check('oldpassword', $user->password))->toBeTrue();
 });

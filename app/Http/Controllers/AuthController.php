@@ -6,10 +6,13 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Exception;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -52,7 +55,7 @@ class AuthController extends Controller
                     'message' => 'Credentials are wrong!'
                 ], 401);
             }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             Log::error($e->getMessage());
             return response()->json([
                 'message' => "Something went wrong!"
@@ -64,14 +67,13 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-    
+
             $user->tokens()->delete();
-    
+
             return response()->json([
                 'message' => 'successfully logged out!',
             ], 200);
-            
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             Log::error($e->getMessage());
             return response()->json([
                 'message' => 'Something went wrong!'
@@ -79,13 +81,54 @@ class AuthController extends Controller
         }
     }
 
-    public function forgotPassword()
+    public function forgotPassword(Request $request)
     {
-        //* When the user clicks on the link and email is sent with the temporary password
+        $request->validate(['email' => 'required|email']);
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => 'Reset link sent to your email'
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __($status)
+        ], 400);
     }
 
-    public function resetPassword()
+    public function resetPassword(Request $request)
     {
-        //* When the user enters the temp pass and re-enters the new one
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|confirmed|min:8',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PasswordReset) {
+            return response()->json([
+                'message' => 'Successful password reset'
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => __($status)
+        ], 400);
     }
 }

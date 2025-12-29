@@ -55,6 +55,11 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+        Front-end URL
+    */
+    'frontend_url' => env('FRONT_END_URL', 'http://localhost:3000'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
