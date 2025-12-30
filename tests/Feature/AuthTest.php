@@ -395,3 +395,119 @@ test('New password is too short', function() {
     expect(Hash::check('1234567', $user->password))->toBeFalse();
     expect(Hash::check('oldpassword', $user->password))->toBeTrue();
 });
+
+//!Rate limiting for forgot password tests
+
+test('test two consecutive requests for forgot password from the same email', function() {
+    $user = User::factory()->create(['email' => 'teo@mail.com']);
+
+    Notification::fake();
+
+    for ($i = 0; $i <= 2; $i++) {
+        $response = $this->postJson('api/auth/forgot-password', [
+            'email' => 'teo@mail.com',
+        ]);
+    }
+
+    $response->assertStatus(400)
+        ->assertJson([
+            'message' => 'Please wait before retrying.'
+        ]);
+});
+
+test('test more than two consecutive requests for forgot password from the same email and trigger the rate limiter', function() {
+    $user = User::factory()->create(['email' => 'teo@mail.com']);
+
+    Notification::fake();
+
+    for ($i = 0; $i <= 3; $i++) {
+        $response = $this->postJson('api/auth/forgot-password', [
+            'email' => 'teo@mail.com',
+        ]);
+    }
+
+    $response->assertStatus(429)
+        ->assertJson([
+            'message' => 'Too many password reset attempts. Please try again later'
+        ]);
+});
+
+test('the rate limit is per email not global', function() {
+    $user1 = User::factory()->create(['email' => 'user1@mail.com']);
+    $user2 = User::factory()->create(['email' => 'user2@mail.com']);
+
+    for ($i = 0; $i <= 3; $i++) {
+        $firstResponse = $this->postJson('api/auth/forgot-password', [
+            'email' => 'user1@mail.com',
+        ]);
+    }
+
+    $firstResponse->assertStatus(429);
+
+    $response = $this->postJson('api/auth/forgot-password', [
+        'email' => 'user2@mail.com',
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJson([
+            'message' => 'Reset link sent to your email',
+        ]);
+});
+
+test('includes rate limit headers in response', function() {
+    User::factory()->create([
+        'email' => 'teo@mail.com'
+    ]);
+
+    $response = $this->postJson('api/auth/forgot-password', [
+        'email' => 'teo@mail.com',
+    ]);
+
+    expect($response->headers->has('X-RateLimit-Limit'))->toBeTrue()
+            ->and($response->headers->has('X-RateLimit-Remaining'))->toBeTrue();
+
+    expect($response->headers->get('X-RateLimit-Limit'))->toBe('3')
+        ->and($response->headers->get('X-RateLimit-Remaining'))->toBe('2');
+});
+
+test('retry-after header is included after rate limited', function() {
+    $user = User::factory()->create(['email' => 'teo@mail.com']);
+
+    Notification::fake();
+
+    for ($i = 0; $i < 3; $i++) {
+        $this->postJson('api/auth/forgot-password', [
+            'email' => 'teo@mail.com',
+        ]);
+    }
+
+    $response = $this->postJson('api/auth/forgot-password', [
+        'email' => 'teo@mail.com',
+    ]);
+
+    $response->assertStatus(429);
+    
+    expect($response->json('retry_after'))->toBeGreaterThan(0);
+});
+
+test('IP address is limited after 10 requests', function() {
+    Notification::fake();
+    
+    for ($i = 1; $i <= 10; $i++) {
+        User::factory()->create(['email' => "user{$i}@mail.com"]);
+        
+        $this->withServerVariables(['REMOTE_ADDR' => '192.168.1.100'])
+             ->postJson('api/auth/forgot-password', [
+                 'email' => "user{$i}@mail.com",
+             ]);
+    }
+    
+    User::factory()->create(['email' => 'user11@mail.com']);
+    
+    $response = $this->withServerVariables(['REMOTE_ADDR' => '192.168.1.100'])
+                     ->postJson('api/auth/forgot-password', [
+                         'email' => 'user11@mail.com',
+                     ]);
+
+    $response->assertStatus(429);
+});
