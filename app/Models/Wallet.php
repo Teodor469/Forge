@@ -30,7 +30,7 @@ class Wallet extends Model
     public static function booted()
     {
         static::creating(function(self $wallet) {
-            $wallet->used_id = auth()->id();
+            $wallet->user_id = auth()->id();
         });
     }
 }
