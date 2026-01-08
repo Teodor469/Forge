@@ -114,3 +114,7 @@ docker-compose logs [service-name]
 ```bash
 docker exec -it forge-app bash
 ```
+
+### For Permission issues run this command:
+```bash
+sudo chown -R $USER:$USER /home/legion/Storage/Projects/Forge {Path to project}
