@@ -9,7 +9,6 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-      - ../forge-package:/var/www/forge-package
     networks:
       - forge-network
     depends_on:
