@@ -118,3 +118,10 @@ docker exec -it forge-app bash
 ### For Permission issues run this command:
 ```bash
 sudo chown -R $USER:$USER /home/legion/Storage/Projects/Forge {Path to project}
+```
+
+### For Permission error when hitting a route
+```bash
+docker exec forge-app chmod -R 775 storage bootstrap/cache
+docker exec forge-app chown -R www-data:www-data storage bootstrap/cache
+```

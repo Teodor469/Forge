@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\WalletType;
+use App\Enums\WalletType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,8 +10,6 @@ class Wallet extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'id',
-        'user_id',
         'name',
         'type',
         'balance',
@@ -30,7 +28,12 @@ class Wallet extends Model
     public static function booted()
     {
         static::creating(function(self $wallet) {
-            $wallet->used_id = auth()->id();
+            // Always set user_id to authenticated user (except in testing)
+            if (app()->environment('testing') && !empty($wallet->user_id)) {
+                // In tests, allow factories to set user_id
+                return;
+            }
+            $wallet->user_id = auth()->id();
         });
     }
 }
