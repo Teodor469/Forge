@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateWalletRequest;
 use App\Http\Requests\UpdateWalletRequest;
 use App\Http\Resources\WalletResource;
+use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +17,7 @@ class WalletController extends Controller
 {
     public function index()
     {
-        $wallets = Wallet::all();
+        $wallets = Wallet::where('user_id', auth()->id())->get();
         return response()->json([
             'message' => 'Successfully returned all wallets!',
             'wallets' => WalletResource::collection($wallets),
@@ -43,7 +44,9 @@ class WalletController extends Controller
 
     public function show(Wallet $wallet)
     {
-        return new WalletResource($wallet);
+        return response()->json([
+            'wallet' => new WalletResource($wallet),
+        ], 200);
     }
 
     public function update(UpdateWalletRequest $request, Wallet $wallet)

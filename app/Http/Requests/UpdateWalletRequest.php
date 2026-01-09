@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\WalletType;
+use App\Enums\WalletType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
