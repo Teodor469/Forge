@@ -44,6 +44,8 @@ class WalletController extends Controller
 
     public function show(Wallet $wallet)
     {
+        $this->authorize('view', $wallet);
+
         return response()->json([
             'wallet' => new WalletResource($wallet),
         ], 200);
@@ -51,11 +53,7 @@ class WalletController extends Controller
 
     public function update(UpdateWalletRequest $request, Wallet $wallet)
     {
-        if (auth()->id() !== $wallet->user_id) {
-            return response()->json([
-                'message' => 'You are unauthorized to perform this action',
-            ], 403);
-        }
+        $this->authorize('update', $wallet);
 
         try {
             $validated = $request->validated();
@@ -77,11 +75,7 @@ class WalletController extends Controller
 
     public function delete(Wallet $wallet)
     {
-        if (auth()->id() !== $wallet->user_id) {
-            return response()->json([
-                'message' => 'You are unauthorized to perform this action!'
-            ], 403);
-        }
+        $this->authorize('delete', $wallet);
 
         try{
             $wallet->delete();

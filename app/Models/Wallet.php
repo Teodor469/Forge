@@ -23,7 +23,17 @@ class Wallet extends Model
         'type' => WalletType::class,
         'balance' => 'decimal:2',
         'is_active' => 'boolean',
-    ]; 
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function scopeActive($query)
+    {
+        $query->where('is_active', true);
+    }
 
     public static function booted()
     {
