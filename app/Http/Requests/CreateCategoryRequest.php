@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\CategoryType;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class CreateCategoryRequest extends FormRequest
@@ -24,7 +25,13 @@ class CreateCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|min:3',
+            'name' => [
+                'required', 
+                'string', 
+                'min:3',
+                Rule::unique('categories', 'name')
+                    ->where('user_id', auth()->id()),
+            ],
             'type' => ['required', new Enum(CategoryType::class)],
             'color' => 'sometimes|string|min:7|max:7',
             'icon' => 'sometimes|string|max:50',

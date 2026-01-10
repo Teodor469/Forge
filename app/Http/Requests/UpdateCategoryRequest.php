@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\CategoryType;
+use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class UpdateCategoryRequest extends FormRequest
@@ -24,11 +26,28 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|min:3',
+            'name' => [
+                'sometimes', 
+                'string', 
+                'min:3',
+                Rule::unique('categories', 'name')
+                    ->where('user_id', auth()->id()),
+            ],
             'type' => ['sometimes', new Enum(CategoryType::class)],
             'color' => 'sometimes|string|min:7|max:7',
             'icon' => 'sometimes|string|max:50',
-            'parent_id' => 'sometimes|nullable|exists:categories,id,user_id,' . auth()->id(),
+            'parent_id' => [
+                'sometimes',
+                'nullable', 
+                'exclude_if:parent_id,null',
+                'exists:categories,id,user_id,' . auth()->id(),
+                function ($attribute, $value, $fail) {
+                    $category = $this->route('category');
+                    if ($value && $category->children()->exists()) {
+                        $fail('Cannot move a parent category!');
+                    }
+                },
+            ],
         ];
     }
 }
