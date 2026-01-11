@@ -31,7 +31,8 @@ class UpdateCategoryRequest extends FormRequest
                 'string', 
                 'min:3',
                 Rule::unique('categories', 'name')
-                    ->where('user_id', auth()->id()),
+                    ->where('user_id', auth()->id())
+                    ->ignore($this->route('category')),
             ],
             'type' => ['sometimes', new Enum(CategoryType::class)],
             'color' => 'sometimes|string|min:7|max:7',
@@ -43,8 +44,15 @@ class UpdateCategoryRequest extends FormRequest
                 'exists:categories,id,user_id,' . auth()->id(),
                 function ($attribute, $value, $fail) {
                     $category = $this->route('category');
+
+                    if ($value && $value === $category->id) {
+                        $fail('A category cannot be a child and a parent!');
+                        return;
+                    }
+
                     if ($value && $category->children()->exists()) {
                         $fail('Cannot move a parent category!');
+                        return;
                     }
                 },
             ],
