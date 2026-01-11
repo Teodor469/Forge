@@ -12,7 +12,7 @@ use function Pest\Laravel\assertDatabaseMissing;
 
 uses(RefreshDatabase::class);
 
-//!Test index method
+//!Test active method
 test('user can successfully view their own wallets', function() {
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
@@ -26,7 +26,7 @@ test('user can successfully view their own wallets', function() {
         'user_id' => $user2->id,
         'name' => 'Test 2 wallet'
     ]);
-    $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets');
+    $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets/active');
 
     $response->assertStatus(200)
         ->assertJson(['message' => 'Successfully returned all active wallets!'])
@@ -36,7 +36,7 @@ test('user can successfully view their own wallets', function() {
 });
 
 test('guest user is unable to view any wallets because they do not have an account', function() {
-    $response = $this->actingAsGuest()->getJson('/api/wallet/user-wallets');
+    $response = $this->actingAsGuest()->getJson('/api/wallet/user-wallets/active');
 
     $response->assertStatus(401)
     ->assertJson(['message' => 'Unauthenticated.']);
@@ -45,7 +45,7 @@ test('guest user is unable to view any wallets because they do not have an accou
 test('user does not have any wallets but wants to get all wallets', function() {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->getJson('/api/wallet/user-wallets');
+    $response = $this->actingAs($user)->getJson('/api/wallet/user-wallets/active');
 
     $response->assertStatus(200)
         ->assertJson(['message' => 'Successfully returned all active wallets!'])
@@ -67,7 +67,7 @@ test('user has multiple wallets and can successfully view their own wallets', fu
         'user_id' => $user2->id,
         'name' => 'Test 2 wallet'
     ]);
-    $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets');
+    $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets/active');
 
     $response->assertStatus(200)
         ->assertJson(['message' => 'Successfully returned all active wallets!'])

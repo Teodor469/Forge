@@ -27,7 +27,7 @@ class WalletFactory extends Factory
             'currency' => fake()->randomElement(CurrencyType::cases()),
             'institution' => fake()->company(),
             'last_four_digits' => fake()->numerify('####'),
-            'is_active' => fake()->boolean(),
+            'is_active' => true,
         ];
     }
 }
