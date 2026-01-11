@@ -710,7 +710,7 @@ test('test category validation error for parent_id when updating', function () {
 
     // Test non-integer parent_id
     $response = $this->actingAs($user1)->putJson("/api/category/user-categories/update/{$category1->id}", [
-        'parent_id' => 'invalid_id',
+        'parent_id' => 9999,
     ]);
 
     $response->assertStatus(422)
