@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->enum('type', ['savings', 'checking', 'credit_card', 'debit_card', 'investment', 'cash']);
             $table->decimal('balance', 12, 2)->default(0);
-            $table->string('currency', 3)->default('EUR');
+            $table->enum('currency', ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD'])->default('EUR');
             $table->string('institution');
             $table->string('last_four_digits', 4)->nullable();
             $table->boolean('is_active')->default(true);

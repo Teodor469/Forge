@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateWalletRequest;
 use App\Http\Requests\UpdateWalletRequest;
 use App\Http\Resources\WalletResource;
-use App\Models\User;
 use App\Models\Wallet;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\error;
@@ -15,13 +13,28 @@ use function Pest\Laravel\json;
 
 class WalletController extends Controller
 {
-    public function index()
+    public function active()
     {
-        $wallets = Wallet::where('user_id', auth()->id())->get();
+        $wallets = Wallet::where('user_id', auth()->id())
+        ->active()
+        ->get();
+
         return response()->json([
-            'message' => 'Successfully returned all wallets!',
+            'message' => 'Successfully returned all active wallets!',
             'wallets' => WalletResource::collection($wallets),
         ], 200);
+    }
+
+    public function archived()
+    {
+        $wallets = Wallet::where('user_id', auth()->id())
+            ->where('is_active', false)
+            ->get();
+        
+            return response()->json([
+                'message' => 'Successfully returned all archived wallets!',
+                'wallets' => WalletResource::collection($wallets),
+            ], 200);
     }
 
     public function store(CreateWalletRequest $request)

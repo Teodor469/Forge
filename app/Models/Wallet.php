@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CurrencyType;
 use App\Enums\WalletType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,6 +23,7 @@ class Wallet extends Model
     protected $casts = [
         'type' => WalletType::class,
         'balance' => 'decimal:2',
+        'currency' => CurrencyType::class,
         'is_active' => 'boolean',
     ];
 

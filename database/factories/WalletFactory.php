@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CurrencyType;
 use App\Enums\WalletType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +24,7 @@ class WalletFactory extends Factory
             'name' => fake()->name(),
             'type' => fake()->randomElement(WalletType::cases()),
             'balance' => fake()->randomFloat(2, 10, 10000),
-            'currency' => 'EUR',
+            'currency' => fake()->randomElement(CurrencyType::cases()),
             'institution' => fake()->company(),
             'last_four_digits' => fake()->numerify('####'),
             'is_active' => fake()->boolean(),
