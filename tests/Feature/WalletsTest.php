@@ -29,7 +29,7 @@ test('user can successfully view their own wallets', function() {
     $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets/active');
 
     $response->assertStatus(200)
-        ->assertJson(['message' => 'Successfully returned all wallets!'])
+        ->assertJson(['message' => 'Successfully returned all active wallets!'])
         ->assertJsonCount(1, 'wallets')
         ->assertJsonFragment(['name' => 'Test 1 wallet'])
         ->assertJsonMissing(['name' => 'Test 2 wallet']);
@@ -48,7 +48,7 @@ test('user does not have any wallets but wants to get all wallets', function() {
     $response = $this->actingAs($user)->getJson('/api/wallet/user-wallets/active');
 
     $response->assertStatus(200)
-        ->assertJson(['message' => 'Successfully returned all wallets!'])
+        ->assertJson(['message' => 'Successfully returned all active wallets!'])
         ->assertJsonCount(0, 'wallets');
 
 });
