@@ -13,6 +13,16 @@ use function Pest\Laravel\json;
 
 class WalletController extends Controller
 {
+    public function index()
+    {
+        $wallets = Wallet::where('user_id', auth()->id())->get();
+
+        return response()->json([
+            'message' => 'Successfully returned all wallets!',
+            'wallets' => WalletResource::collection($wallets),
+        ], 200);
+    }
+
     public function active()
     {
         $wallets = Wallet::where('user_id', auth()->id())

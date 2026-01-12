@@ -29,7 +29,7 @@ test('user can successfully view their own wallets', function() {
     $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets');
 
     $response->assertStatus(200)
-        ->assertJson(['message' => 'Successfully returned all active wallets!'])
+        ->assertJson(['message' => 'Successfully returned all wallets!'])
         ->assertJsonCount(1, 'wallets')
         ->assertJsonFragment(['name' => 'Test 1 wallet'])
         ->assertJsonMissing(['name' => 'Test 2 wallet']);
@@ -48,7 +48,7 @@ test('user does not have any wallets but wants to get all wallets', function() {
     $response = $this->actingAs($user)->getJson('/api/wallet/user-wallets');
 
     $response->assertStatus(200)
-        ->assertJson(['message' => 'Successfully returned all active wallets!'])
+        ->assertJson(['message' => 'Successfully returned all wallets!'])
         ->assertJsonCount(0, 'wallets');
 
 });
@@ -57,22 +57,31 @@ test('user has multiple wallets and can successfully view their own wallets', fu
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
-    $wallet1 = Wallet::factory()->count(10)->create([
+    // Create both active and inactive wallets to test that index returns ALL
+    $activeWallets = Wallet::factory()->count(5)->create([
         'user_id' => $user1->id,
-        'name' => 'Test 1 wallet',
+        'name' => 'Active Test wallet',
         'is_active' => true
+    ]);
+
+    $inactiveWallets = Wallet::factory()->count(3)->create([
+        'user_id' => $user1->id,
+        'name' => 'Inactive Test wallet',
+        'is_active' => false
     ]);
 
     $wallet2 = Wallet::factory()->create([
         'user_id' => $user2->id,
         'name' => 'Test 2 wallet'
     ]);
+    
     $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets');
 
     $response->assertStatus(200)
-        ->assertJson(['message' => 'Successfully returned all active wallets!'])
-        ->assertJsonCount(10, 'wallets')
-        ->assertJsonFragment(['name' => 'Test 1 wallet'])
+        ->assertJson(['message' => 'Successfully returned all wallets!'])
+        ->assertJsonCount(8, 'wallets') // 5 active + 3 inactive = 8 total
+        ->assertJsonFragment(['name' => 'Active Test wallet'])
+        ->assertJsonFragment(['name' => 'Inactive Test wallet'])
         ->assertJsonMissing(['name' => 'Test 2 wallet'])
         ->assertJsonStructure([
             'wallets' => [
@@ -81,6 +90,104 @@ test('user has multiple wallets and can successfully view their own wallets', fu
                 ]
             ]
         ]);
+});
+
+//!Test active method
+test('user can successfully view their own active wallets', function() {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    $wallet1 = Wallet::factory()->create([
+        'user_id' => $user1->id,
+        'name' => 'Test 1 active wallet',
+        'is_active' => true
+    ]);
+
+    $wallet2 = Wallet::factory()->create([
+        'user_id' => $user2->id,
+        'name' => 'Test 2 active wallet',
+        'is_active' => true
+    ]);
+    
+    $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets/active');
+
+    $response->assertStatus(200)
+        ->assertJson(['message' => 'Successfully returned all active wallets!'])
+        ->assertJsonCount(1, 'wallets')
+        ->assertJsonFragment(['name' => 'Test 1 active wallet'])
+        ->assertJsonMissing(['name' => 'Test 2 active wallet']);
+});
+
+test('guest user is unable to view any active wallets because they do not have an account', function() {
+    $response = $this->actingAsGuest()->getJson('/api/wallet/user-wallets/active');
+
+    $response->assertStatus(401)
+    ->assertJson(['message' => 'Unauthenticated.']);
+});
+
+test('user does not have any active wallets but wants to get all active wallets', function() {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->getJson('/api/wallet/user-wallets/active');
+
+    $response->assertStatus(200)
+        ->assertJson(['message' => 'Successfully returned all active wallets!'])
+        ->assertJsonCount(0, 'wallets');
+});
+
+test('user has multiple active wallets and can successfully view their own active wallets', function() {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    $wallet1 = Wallet::factory()->count(8)->create([
+        'user_id' => $user1->id,
+        'name' => 'Test 1 active wallet',
+        'is_active' => true
+    ]);
+
+    $wallet2 = Wallet::factory()->create([
+        'user_id' => $user2->id,
+        'name' => 'Test 2 active wallet',
+        'is_active' => true
+    ]);
+    
+    $response = $this->actingAs($user1)->getJson('/api/wallet/user-wallets/active');
+
+    $response->assertStatus(200)
+        ->assertJson(['message' => 'Successfully returned all active wallets!'])
+        ->assertJsonCount(8, 'wallets')
+        ->assertJsonFragment(['name' => 'Test 1 active wallet'])
+        ->assertJsonMissing(['name' => 'Test 2 active wallet'])
+        ->assertJsonStructure([
+            'wallets' => [
+                '*' => [
+                    'id', 'name', 'type', 'balance', 'currency', 'institution', 'last_four_digits', 'is_active'
+                ]
+            ]
+        ]);
+});
+
+test('inactive wallets are not included in active wallets response', function() {
+    $user = User::factory()->create();
+
+    $activeWallet = Wallet::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'Active wallet',
+        'is_active' => true
+    ]);
+
+    $inactiveWallet = Wallet::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'Inactive wallet',
+        'is_active' => false
+    ]);
+
+    $response = $this->actingAs($user)->getJson('/api/wallet/user-wallets/active');
+
+    $response->assertStatus(200)
+        ->assertJsonCount(1, 'wallets')
+        ->assertJsonFragment(['name' => 'Active wallet'])
+        ->assertJsonMissing(['name' => 'Inactive wallet']);
 });
 
 //!Test archived method

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('wallet')->group(function() {
     Route::middleware('auth:sanctum')->group(function() {
+        Route::get('/user-wallets', [WalletController::class, 'index'])->name('wallet.index');
         Route::get('/user-wallets/active', [WalletController::class, 'active'])->name('wallet.active');
         Route::get('/user-wallets/archived', [WalletController::class, 'archived'])->name('wallet.archived');
         Route::post('/user-wallets/store', [WalletController::class, 'store'])->name('wallet.store');
