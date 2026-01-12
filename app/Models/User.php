@@ -49,8 +49,18 @@ class User extends Authenticatable
         ];
     }
 
+    public function wallet()
+    {
+        return $this->hasMany(Wallet::class);
+    }
+
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));
+    }
+
+    public function category()
+    {
+        return $this->hasMany(Category::class);
     }
 }
