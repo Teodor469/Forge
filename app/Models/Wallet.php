@@ -32,6 +32,11 @@ class Wallet extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
     public function scopeActive($query)
     {
         $query->where('is_active', true);
