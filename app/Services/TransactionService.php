@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 class TransactionService {
     public function createTransaction(array $data)
     {
-        DB::transaction(function() use ($data) {
+        return DB::transaction(function() use ($data) {
             $wallet = Wallet::where('id', $data['wallet_id'])
                             ->where('user_id', auth()->id())
                             ->firstOrFail();
